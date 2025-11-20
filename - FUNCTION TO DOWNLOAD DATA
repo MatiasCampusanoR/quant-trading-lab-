@@ -1,0 +1,74 @@
+# === ENVIRONMENT AND DATASET SETUP ===
+# Author: Matías Campusano
+# Repository: Quant Trading Lab
+# Date: 2025
+# Description: Download OHLC daily data from Yahoo Finance for XAUUSD
+#              and perform a quant-style verification (head/tail).
+
+# --- FUNCTION TO DOWNLOAD DATA ---
+def download_yahoo_data(
+        symbol: str,
+        start_date: str,
+        end_date: str = None,
+        interval: str = "1d"
+    ):
+    """
+    Download OHLC data from Yahoo Finance and return a DataFrame.
+    
+    Parameters:
+    - symbol: ticker (e.g., "XAUUSD=X")
+    - start_date: YYYY-MM-DD
+    - end_date: YYYY-MM-DD or None → until today
+    - interval: '1d' (daily) or other intervals
+    
+    Returns:
+    - DataFrame with columns ['Date', 'Open', 'High', 'Low', 'Close']
+    """
+    if end_date is None:
+        end_date = dt.datetime.now().strftime("%Y-%m-%d")
+    
+    # Download
+    df = yf.download(
+        symbol,
+        start=start_date,
+        end=end_date,
+        interval=interval,
+        auto_adjust=False,
+        progress=False
+    )
+    
+    if df.empty:
+        print(f"[ERROR] No data returned for {symbol}")
+        return None
+    
+    # Keep OHLC columns and reset index
+    df = df.rename(columns={
+        "Open": "Open",
+        "High": "High",
+        "Low": "Low",
+        "Close": "Close"
+    })
+    df = df[["Open","High","Low","Close"]]
+    df.reset_index(inplace=True)  # Make Date a column
+    
+    print(f"[OK] Data downloaded for {symbol} ({interval})")
+    print(f"Date range: {df['Date'].min()} → {df['Date'].max()}")
+    
+    return df
+
+# --- USAGE: XAUUSD DAILY DATA FOR CURRENT YEAR ---
+current_year_start = f"{dt.datetime.now().year}-01-01"
+
+df = download_yahoo_data(
+    symbol="XAUUSD=X",
+    start_date=current_year_start,
+    end_date=None,  # until today
+    interval="1d"
+)
+
+# --- QUANT-STYLE VERIFICATION ---
+print("\nFirst 5 rows:")
+print(df.head())
+
+print("\nLast 5 rows:")
+print(df.tail())
